@@ -2,86 +2,73 @@
 
 # Godot Signals
 
-A powerful signal system for Godot Engine, making signal handling and event management effortless and flexible.
+A powerful signal system for Godot Engine that provides efficient signal handling with support for filtering, mapping, and high-performance signal processing.
 
 ## 📖 Overview
 
-Godot Signals is an addon that extends Godot's built-in signal system with powerful features for event handling and signal management. It provides a global event bus, signal instrumentation, and advanced signal utilities that make working with signals more intuitive and powerful.
+Godot Signals is an addon that enhances Godot's built-in signal system with powerful features for signal processing and event management. It provides a clean, high-level API for working with signals while handling all the complexity of efficient signal processing under the hood.
 
-While Godot's native signal system is powerful, it has some limitations when dealing with complex scenarios like:
+The addon is built on two main components:
 
-- Connecting to multiple signals simultaneously
-- Handling conditional signal connections
-- Managing dynamic signal connections
-- Debugging signal flows
-- Pattern-based signal matching
-
-This addon addresses these limitations by providing a comprehensive solution that makes signal handling more flexible and maintainable.
-
-## 🎯 Features
-
-### 🔑 Global Event Bus
-
-- Centralized event management
-- Pattern-based signal subscription
-- Automatic signal forwarding from instrumented objects
-
-### 🔑 Signal Instrumentation
-
-- Easy integration with existing nodes
-- Automatic signal forwarding to global bus
-- Support for dynamic node creation
-
-### 🔑 Advanced Signal Utilities
-
-- Signal combination operators (`any`, `all`, `with_latest_from`)
-- Signal filtering and mapping
-- Pattern matching for signal names
-- Debugging tools for signal flow
+- **Signal Processing**: Efficient signal handling with support for transform operations such as filtering and mapping
+- **Event Bus** (Coming Soon): A global event system for centralized event management
 
 ## 🚀 Quick Start
 
-Here's a simple example showing how to use the addon:
+Here's a quick guide to get started with Godot Signals:
+
+### Basic Signal Connection
 
 ```gdscript
-# player.gd
-extends CharacterBody2D
-
-signal died(location: Vector2)
-signal health_changed(new_health: int)
-
-func _ready() -> void:
-    # Instrument this node to forward its signals to the global bus
-    GSignalsCore.instrument(self)
-
-func die() -> void:
-    died.emit(position)
-
-func take_damage(amount: int) -> void:
-    health -= amount
-    health_changed.emit(health)
-
-# main.gd
-extends Node2D
-
-func _ready() -> void:
-    # Connect to any player death signal
-    GSignals.any_player_died.connect(_on_player_died)
-
-    # Connect using pattern matching
-    GSignals.connect("player:*", _on_player_signal)
-
-    # Connect to multiple signals
-    GSignals.any(
-        player.died,
-        player.health_changed
-    ).connect(_on_player_event)
-
-    # Connect with filtering
-    GSignals.any_player_died.filter(
-        func(pos): pos != respawn_position
-    ).connect(_on_player_died_away_from_spawn)
+# Connect to a signal
+GSignals.from(signal)
+    .bind(func(val): print("Only 11 and more!"))
 ```
+
+### Filtering Signals
+
+```gdscript
+# Only process signals where the first argument is at least 10
+GSignals.from(signal)
+    .filter(func(val: int) -> bool: return val >= 10)
+    .bind(func(val: int): print("10 and more!"))
+```
+
+### Transforming Signals
+
+```gdscript
+# Transform a position signal into a distance from origin
+GSignals.from(signal)
+    .map(func(pos: Vector2) -> float: return pos.distance_to(position))
+    .bind(func(distance: float): print("Distance to target: %s" % distance))
+```
+
+### Chaining Operations
+
+```gdscript
+# Filter and then transform signal arguments
+GSignals.from(signal)
+    .filter(func(x: int) -> bool: return x > 0)
+    .map(func(x: int) -> int: return x * 2)
+    .bind(func(x: int): print(x))
+```
+
+## 🎯 Features
+
+### 🔑 Signal Processing
+
+- **Filter Operations**: Filter signal arguments based on predicates
+- **Map Operations**: Transform signal arguments into new values
+- **Combined Operations**: Chain multiple operations together
+- **Optimization**: Choose the best connection type based on signal frequency (frequent versus unfrequent emissions)
+
+### 🔑 Event Bus (Coming Soon)
+
+### 🔑 Performance Optimizations
+
+- **Smart Connection Types**: Automatically choose between high-frequency and low-frequency connections
+- **Minimal Allocations**: Efficient memory usage
+- **Optimized Callbacks**: Reduced overhead for signal processing
 
 ## 📚 Usage Guide
 
@@ -89,93 +76,73 @@ func _ready() -> void:
 
 1. Add the addon to your project
 2. Enable the addon in Project Settings
-3. The `GSignals` autoload will be automatically added
+3. The `GSignals` class will be available in your code
 
-### 🎯 Signal Instrumentation
-
-To forward a node's signals to the global bus:
+### 🎯 Creating Operations
 
 ```gdscript
-# In _ready() or when creating nodes dynamically
-GSignalsCore.instrument(node)
+# Create a GSignals instance
+var sig_1: GSignals = GSignals.from(my_signal)
+# Is equivalent to
+var sig_2: GSignals = GSignals.from(self, "my_signal")
 ```
 
-### 🔍 Pattern Matching
-
-Connect to signals using patterns:
+It is also possible to explicitly set the signal emission frequency for optimal performance:
 
 ```gdscript
-# Connect to all player signals
-GSignals.connect("player:*", _on_player_signal)
-
-# Connect to specific signal patterns
-GSignals.connect("player:health_*", _on_player_health_signal)
+# Tells the signal is emitting frequently and should be optimized for performance
+var sig: GSignals = GSignals.from(my_signal, GSignals.GSignalsBindFlags.HIGH_FREQUENCY_HINT)
 ```
 
-### 🎮 Signal Operators
-
-Combine and transform signals:
+### 🔍 Managing Connections
 
 ```gdscript
-# Connect to either signal
-GSignals.any(player.died, player.health_changed).connect(_on_event)
-
-# Connect to both signals
-GSignals.all(player.died, player.health_changed).connect(_on_both)
-
-# Connect with latest value from another signal
-GSignals.with_latest_from(
-    player.died,
-    player.position_changed
-).connect(_on_died_with_position)
+# Connect to a signal
+var connection = GSignals.from(my_signal).bind(callback)
+# Also possible to connect to an existing GSignals instance
+var sig: GSignals = ...
+var connection = sig.bind(callback)
 ```
 
-### 🔄 Signal Transformation
-
-Filter and map signals:
+When binding to a `GSignals` instance, the connection is automatically started, hence the underlying signal is connected.
 
 ```gdscript
-# Filter signals
-GSignals.any_player_died.filter(
-    func(pos): return pos.x > 100
-).connect(_on_player_died_right)
-
-# Map signal data
-GSignals.any_player_health_changed.map(
-    func(health): return health / max_health
-).connect(_on_health_percentage_changed)
+# Check if connection is active
+if connection.is_active():
+    # Do something
 ```
-
-## 🛠️ Advanced Features
-
-### 🔍 Debug Mode
-
-Enable debug mode to track signal flow:
 
 ```gdscript
-GSignalsCore.set_debug(true)
+# Disconnect from a signal
+connection.stop()
 ```
 
-### 🎯 Dynamic Connections
+Connections can be re-established by invoking the `start` method.
 
-Connect to signals from dynamically created nodes:
+### 🔍 Operations
+
+#### Filter
 
 ```gdscript
-# The connection will be established when the node is created
-GSignals.connect_dynamic("player:*", _on_player_signal)
+# Filter signal parameters; if the filter returns false, the signal is not handled
+GSignals.from(on_damage)
+    .filter(func(val: int) -> bool: return val > 0)
+    .bind(...)
 ```
 
-### 🔄 Signal Batching
-
-Batch multiple signal emissions:
+#### Map
 
 ```gdscript
-GSignalsCore.batch_begin()
-# Multiple signal emissions
-player.died.emit(position)
-player.health_changed.emit(0)
-GSignalsCore.batch_end()
+# Transform parameters into another value
+GSignals.from(on_damage)
+    .map(func(val: int) -> int: return val * critical_damage_ratio)
+    .bind(...)
 ```
+
+### 🎮 Performance Considerations
+
+- Chain operations carefully as each operation adds overhead
+- Use the Event Bus (coming soon) for global event management
 
 ## 📝 License
 

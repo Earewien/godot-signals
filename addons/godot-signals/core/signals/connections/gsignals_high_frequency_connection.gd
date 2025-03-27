@@ -1,3 +1,19 @@
+## Connection class optimized for high-frequency signals.
+##
+## This connection class uses code generation to create an optimized callback
+## that handles the operations. It is designed for signals that are emitted
+## frequently, where performance is critical.
+##
+## The generated code is more efficient than the low-frequency connection
+## because it avoids array allocations and function calls for each signal
+## emission. However, it requires more setup time and memory.
+##
+## Example:
+## [codeblock]
+## # Create a high-frequency connection with a filter
+## var connection = GSignalsHighFrequencyConnection.new(signal, [filter_op], callback, 0)
+## connection.start()
+## [/codeblock]
 class_name GSignalsHighFrequencyConnection
 extends GSignalsConnection
 
@@ -21,13 +37,21 @@ extends GSignalsConnection
 # Private variables
 #------------------------------------------
 
+## The generated script that handles the operations.
 var _generated_script: GDScript
+## An instance of the generated script.
 var _generated_script_instance: Object
 
 #------------------------------------------
 # Godot override functions
 #------------------------------------------
 
+## Creates a new high-frequency connection.
+##
+## @param sig The signal to connect to
+## @param operations Array of operations to apply to the signal arguments
+## @param callback The user's callback function
+## @param flags The connection flags to use
 func _init(sig: Signal, operations: Array[GSignalsOperation], callback: Callable, flags: int) -> void:
     super._init(sig, operations, callback, flags)
 
@@ -39,6 +63,12 @@ func _init(sig: Signal, operations: Array[GSignalsOperation], callback: Callable
 # Private functions
 #------------------------------------------
 
+## Sets up the connection and returns the technical callback.
+##
+## This method generates a script that efficiently handles the operations
+## and returns a callback to that script.
+##
+## @return The technical callback that will handle the operations
 func _do_setup_connection() -> Callable:
     if _generated_script == null:
         _generate_script()
@@ -64,6 +94,11 @@ func _do_setup_connection() -> Callable:
 
     return _generated_script_instance._handle_signal
 
+## Generates the script that will handle the operations.
+##
+## This method creates a script that efficiently processes the signal arguments
+## by applying the operations in sequence. The generated code avoids array
+## allocations and minimizes function calls for better performance.
 func _generate_script() -> void:
     var script_text = """
 extends RefCounted
