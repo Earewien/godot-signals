@@ -1,17 +1,15 @@
 name: Unit tests
 
-on:
-  push:
-    branches: ["*"]
-  pull_request:
-    branches: ["*"]
+on: [push, pull_request]
 
 jobs:
   test:
     runs-on: ubuntu-latest
+    container:
+      image: barichello/godot-ci:latest
     steps:
-      - uses: actions/checkout@v4
-
+      - name: Checkout
+        uses: actions/checkout@v2
       - name: Run unit tests
         uses: jamie-pate/run-gut-tests-action@v2.0.3
         with:
