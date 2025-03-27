@@ -14,5 +14,5 @@ jobs:
         uses: jamie-pate/run-gut-tests-action@v2.0.3
         with:
           directory: .
-          godotFlags: --headless
+          useContainer: false
           gutConfigPath: .gutconfig.json
