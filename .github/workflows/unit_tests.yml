@@ -1,0 +1,20 @@
+name: Unit tests
+
+on: [push, pull_request]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    container:
+      image: barichello/godot-ci:latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+      - name: Godot Import
+        run: godot --headless --import
+      - name: Run unit tests
+        uses: jamie-pate/run-gut-tests-action@v2.0.3
+        with:
+          directory: .
+          useContainer: false
+          gutConfigPath: .gutconfig.json
