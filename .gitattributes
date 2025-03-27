@@ -2,3 +2,5 @@
 * text=auto eol=lf
 
 # Only include the addons folder when downloading from the Asset Library.
+addons/gut                           export-ignore
+test                                 export-ignore
