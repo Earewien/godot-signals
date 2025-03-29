@@ -1,3 +1,8 @@
+## Matches signal patterns against aliases and signal names.
+##
+## This class provides pattern matching functionality for the signal broker system.
+## It supports wildcard patterns in the format "alias:signal" where * can be used
+## as a wildcard to match any sequence of characters.
 class_name GBrokerPatternMatcher
 extends RefCounted
 
@@ -29,9 +34,11 @@ extends RefCounted
 # Public functions
 #------------------------------------------
 
-## Checks if the given alias and signal name match the pattern
-## The pattern should be in the format "alias:signal" where * can be used as a wildcard
-## Returns true if the alias and signal match the pattern, false otherwise
+## Checks if the given alias and signal name match the pattern.
+## @param alias The identifier of the object.
+## @param signal_name The name of the signal.
+## @param pattern Format is "alias:signal" where * can be used as a wildcard.
+## @return True if the alias and signal match the pattern, false otherwise.
 func matches(alias: String, signal_name: String, pattern: String) -> bool:
 	# Split the pattern into alias and signal parts
 	var parts := pattern.split(":")

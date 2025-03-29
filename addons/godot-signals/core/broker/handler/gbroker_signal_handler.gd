@@ -1,3 +1,8 @@
+## Handles the connection to signals and dispatches them to subscribers.
+##
+## This class connects to objects' signals and routes them to registered callbacks based on 
+## pattern matching. It supports signals with up to 9 arguments and intelligently passes
+## those arguments to callbacks with variable parameter counts.
 class_name GBrokerSignalHandler
 extends RefCounted
 
@@ -19,11 +24,17 @@ var _cached_callback_to_remove: Array[Callable] = []
 # Public functions
 #------------------------------------------
 
+## Gets the singleton instance of the signal handler.
+## @return The GBrokerSignalHandler singleton instance.
 static func get_instance() -> GBrokerSignalHandler:
     if _instance == null:
         _instance = GBrokerSignalHandler.new()
     return _instance
 
+## Connects to all specified signals on the object.
+## @param object The object to connect to.
+## @param aliases Identifiers for the object.
+## @param signals Array of signal dictionaries with name and args.
 func connect_to_signals(object: Object, aliases: Array[String], signals: Array[Dictionary]) -> void:
     var object_weak_ref: WeakRef = weakref(object)
     
@@ -32,6 +43,7 @@ func connect_to_signals(object: Object, aliases: Array[String], signals: Array[D
         # Connect to signal, with a unique id for each signal and sending all known aliases for the object
         object.get(sig.name).connect(Callable(self, "_on_signal_%s_received" % sig.args.size()).bind(object_weak_ref, aliases, sig.name))
 
+## Clears cached data.
 func reset() -> void:
     _cached_array.clear()
     _cached_callback_to_remove.clear()
@@ -40,9 +52,14 @@ func reset() -> void:
 # Private functions
 #------------------------------------------
 
+## Computes a unique ID for a signal based on its name and arguments.
+## @param signal_name The name of the signal.
+## @param signal_args The arguments of the signal.
+## @return A unique string identifier for the signal.
 func _compute_signal_unique_id(signal_name: String, signal_args: Array[Dictionary]) -> String:
     return "%s:%s" % [signal_name, signal_args.hash()] # Very low probability of hash collision
 
+# Signal handlers for different argument counts
 func _on_signal_0_received(object_weak_ref: WeakRef, aliases: Array[String], signal_name: String) -> void:
     _handle_signal_received([], object_weak_ref, aliases, signal_name)
 
@@ -73,6 +90,12 @@ func _on_signal_8_received(arg1: Variant, arg2: Variant, arg3: Variant, arg4: Va
 func _on_signal_9_received(arg1: Variant, arg2: Variant, arg3: Variant, arg4: Variant, arg5: Variant, arg6: Variant, arg7: Variant, arg8: Variant, arg9: Variant, object_weak_ref: WeakRef, aliases: Array[String], signal_name: String) -> void:
     _handle_signal_received([arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8, arg9], object_weak_ref, aliases, signal_name)
 
+## Core handler that processes signal events and dispatches them to matching subscribers.
+## Intelligently maps signal arguments to callback parameters based on their argument count.
+## @param args Array of signal arguments.
+## @param object_weak_ref Weak reference to the signal emitter.
+## @param aliases Array of identifiers for the object.
+## @param signal_name The name of the emitted signal.
 func _handle_signal_received(args: Array, object_weak_ref: WeakRef, aliases: Array[String], signal_name: String) -> void:
     var object: Object = object_weak_ref.get_ref()
     if not is_instance_valid(object):

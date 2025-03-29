@@ -1,3 +1,8 @@
+## Detects and filters signals from objects.
+##
+## This class is responsible for finding and filtering signals from objects
+## based on different criteria, such as only script signals or excluding common
+## native signals that are typically not relevant for the signal broker system.
 class_name GBrokerSignalDetector
 extends RefCounted
 
@@ -5,6 +10,9 @@ extends RefCounted
 # Constants
 #------------------------------------------
 
+
+## List of common native signals that are typically not relevant for the signal broker
+## and are excluded when using the EXCEPT_NATIVE_SIGNALS flag.
 # Use a Dictionay to compare values in O(1)
 const _BANNED_SIGNALS: Dictionary = {
     "property_list_changed": true,
@@ -39,6 +47,9 @@ const _BANNED_SIGNALS: Dictionary = {
 # Public functions
 #------------------------------------------
 
+## Gets only signals defined in the object's script.
+## @param object The object to get signals from.
+## @return Array of signal dictionaries with name and args.
 func get_signals_from_object_script(object: Object) -> Array[Dictionary]:
     var signals: Array[Dictionary] = []
     var script: GDScript = object.get_script()
@@ -48,6 +59,9 @@ func get_signals_from_object_script(object: Object) -> Array[Dictionary]:
         signals.append(sig)
     return signals
 
+## Gets all signals except those in the banned list.
+## @param object The object to get signals from.
+## @return Array of signal dictionaries with name and args.
 func get_signals_from_object_except_native(object: Object) -> Array[Dictionary]:
     var signals: Array[Dictionary] = []
     for sig in object.get_signal_list():
@@ -56,5 +70,8 @@ func get_signals_from_object_except_native(object: Object) -> Array[Dictionary]:
         signals.append(sig)
     return signals
 
+## Gets all signals from the object.
+## @param object The object to get signals from.
+## @return Array of signal dictionaries with name and args.
 func get_signals_from_object_all(object: Object) -> Array[Dictionary]:
     return object.get_signal_list()
