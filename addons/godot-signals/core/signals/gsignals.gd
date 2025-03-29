@@ -32,6 +32,7 @@ var _original_signal: Signal
 var _operations: Array[GSignalsOperation]
 var _signal_emitter: Object
 var _flags: GSignalsBindFlags
+
 #------------------------------------------
 # Godot override functions
 #------------------------------------------
