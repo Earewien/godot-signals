@@ -59,6 +59,7 @@ const _BANNED_SIGNALS: Dictionary = {
 static var _pattern_matcher: GBrokerPatternMatcher = GBrokerPatternMatcher.new()
 
 static var _subscriptions: Dictionary = {}
+static var _pattern_match_cache: Dictionary = {}
 static var _cached_array: Array[Variant] = []
 static var _cached_callback_to_remove: Array[Callable] = []
 
@@ -84,6 +85,13 @@ static func broadcast_signals_of(object: Object, alias: String = '', flags: GBro
 static func subscribe(pattern: String, callback: Callable) -> void:
     var callbacks: Array[Callable] = _subscriptions.get_or_add(pattern, Array([], TYPE_CALLABLE, '', null))
     callbacks.append(callback)
+    _pattern_match_cache.clear()
+
+static func reset() -> void:
+    _subscriptions.clear()
+    _pattern_match_cache.clear()
+    _cached_array.clear()
+    _cached_callback_to_remove.clear()
 
 #------------------------------------------
 # Private functions
@@ -174,88 +182,109 @@ static func _handle_signal_received(args: Array, object_weak_ref: WeakRef, alias
     if not is_instance_valid(object):
         return
 
-    for pattern in _subscriptions.keys():
-        for alias in aliases:
-            if _pattern_matcher.matches(alias, signal_name, pattern):
-                _cached_callback_to_remove.clear()
+    # --- Cache Check and Population ---
+    var matching_patterns_for_signal: Dictionary = {}
 
-                var callbacks: Array[Callable] = _subscriptions[pattern]
-                for callback in callbacks:
-                    # Ensure that the callback is still valid (object is not freed, ...)
-                    if not callback.is_valid():
-                        _cached_callback_to_remove.append(callback)
-                        continue
+    for alias in aliases:
+        var cache_key := "%s::%s" % [alias, signal_name]
 
-                    var arg_count: int = callback.get_argument_count()
+        if _pattern_match_cache.has(cache_key):
+            var cached_patterns: Array[String] = _pattern_match_cache[cache_key]
+            for p in cached_patterns:
+                matching_patterns_for_signal[p] = true
+        else:
+            var newly_matched_patterns: Array[String] = []
+            for pattern in _subscriptions.keys():
+                if _pattern_matcher.matches(alias, signal_name, pattern):
+                    newly_matched_patterns.append(pattern)
+                    matching_patterns_for_signal[pattern] = true
+            _pattern_match_cache[cache_key] = newly_matched_patterns
+    # --- End Cache Logic ---
 
-                    if arg_count == 0:
-                        callback.call()
-                        continue
+    for pattern in matching_patterns_for_signal.keys():
+        _cached_callback_to_remove.clear()
+        var callbacks: Array[Callable] = _subscriptions.get(pattern)
 
-                    # Check for valid number of arguments for Callable.callv
-                    if arg_count > 11:
-                        push_error("Too many arguments for callback: %s (max 11)" % callback)
-                        continue
+        if callbacks == null:
+            push_warning("Pattern '%s' found in cache/matching but has no callbacks in _subscriptions." % pattern)
+            continue
 
-                    # --- Optimized Argument Building ---
-                    _cached_array.resize(arg_count) # Pre-allocate/resize the array to the exact size needed
+        for callback in callbacks:
+            # Ensure that the callback is still valid (object is not freed, ...)
+            if not callback.is_valid():
+                _cached_callback_to_remove.append(callback)
+                continue
 
-                    var signal_args_to_copy = min(args.size(), arg_count)
-                    var object_needed = (arg_count > signal_args_to_copy)
-                    var signal_name_needed = (arg_count > signal_args_to_copy + (1 if object_needed else 0))
+            var arg_count: int = callback.get_argument_count()
 
-                    var write_idx = 0
-                    # Place object if needed
-                    if object_needed:
-                        _cached_array[write_idx] = object
-                        write_idx += 1
-                    # Place signal_name if needed
-                    if signal_name_needed:
-                        _cached_array[write_idx] = signal_name
-                        write_idx += 1
+            if arg_count == 0:
+                callback.call()
+                continue
 
-                    # Copy actual signal arguments
-                    var read_idx = 0
-                    while write_idx < arg_count and read_idx < args.size():
-                        _cached_array[write_idx] = args[read_idx]
-                        write_idx += 1
-                        read_idx += 1
+            # Check for valid number of arguments for Callable.callv
+            if arg_count > 11:
+                push_error("Too many arguments for callback: %s (max 11)" % callback)
+                continue
 
-                    # Fill remaining slots with null if necessary
-                    while write_idx < arg_count:
-                        _cached_array[write_idx] = null
-                        write_idx += 1
+            # --- Optimized Argument Building ---
+            _cached_array.resize(arg_count) # Pre-allocate/resize the array to the exact size needed
+
+            var signal_args_to_copy = min(args.size(), arg_count)
+            var object_needed = (arg_count > signal_args_to_copy)
+            var signal_name_needed = (arg_count > signal_args_to_copy + (1 if object_needed else 0))
+
+            var write_idx = 0
+            # Place object if needed
+            if object_needed:
+                _cached_array[write_idx] = object
+                write_idx += 1
+            # Place signal_name if needed
+            if signal_name_needed:
+                _cached_array[write_idx] = signal_name
+                write_idx += 1
+
+            # Copy actual signal arguments
+            var read_idx = 0
+            while write_idx < arg_count and read_idx < args.size():
+                _cached_array[write_idx] = args[read_idx]
+                write_idx += 1
+                read_idx += 1
+
+            # Fill remaining slots with null if necessary
+            while write_idx < arg_count:
+                _cached_array[write_idx] = null
+                write_idx += 1
                     # --- End of Optimized Argument Building ---
 
-                    # Call with the calculated arguments
-                    match arg_count:
-                        1:
-                            callback.call(_cached_array[0])
-                        2:
-                            callback.call(_cached_array[0], _cached_array[1])
-                        3:
-                            callback.call(_cached_array[0], _cached_array[1], _cached_array[2])
-                        4:
-                            callback.call(_cached_array[0], _cached_array[1], _cached_array[2], _cached_array[3])
-                        5:
-                            callback.call(_cached_array[0], _cached_array[1], _cached_array[2], _cached_array[3], _cached_array[4])
-                        6:
-                            callback.call(_cached_array[0], _cached_array[1], _cached_array[2], _cached_array[3], _cached_array[4], _cached_array[5])
-                        7:
-                            callback.call(_cached_array[0], _cached_array[1], _cached_array[2], _cached_array[3], _cached_array[4], _cached_array[5], _cached_array[6])
-                        8:
-                            callback.call(_cached_array[0], _cached_array[1], _cached_array[2], _cached_array[3], _cached_array[4], _cached_array[5], _cached_array[6], _cached_array[7])
-                        9:
-                            callback.call(_cached_array[0], _cached_array[1], _cached_array[2], _cached_array[3], _cached_array[4], _cached_array[5], _cached_array[6], _cached_array[7], _cached_array[8])
-                        10:
-                            callback.call(_cached_array[0], _cached_array[1], _cached_array[2], _cached_array[3], _cached_array[4], _cached_array[5], _cached_array[6], _cached_array[7], _cached_array[8], _cached_array[9])
-                        11:
-                            callback.call(_cached_array[0], _cached_array[1], _cached_array[2], _cached_array[3], _cached_array[4], _cached_array[5], _cached_array[6], _cached_array[7], _cached_array[8], _cached_array[9], _cached_array[10])
-                        _:
-                            # This shouldn't be reached due to the check above
-                            push_error("Invalid callback argument count: %d" % arg_count)
+            # Call with the calculated arguments
+            match arg_count:
+                1:
+                    callback.call(_cached_array[0])
+                2:
+                    callback.call(_cached_array[0], _cached_array[1])
+                3:
+                    callback.call(_cached_array[0], _cached_array[1], _cached_array[2])
+                4:
+                    callback.call(_cached_array[0], _cached_array[1], _cached_array[2], _cached_array[3])
+                5:
+                    callback.call(_cached_array[0], _cached_array[1], _cached_array[2], _cached_array[3], _cached_array[4])
+                6:
+                    callback.call(_cached_array[0], _cached_array[1], _cached_array[2], _cached_array[3], _cached_array[4], _cached_array[5])
+                7:
+                    callback.call(_cached_array[0], _cached_array[1], _cached_array[2], _cached_array[3], _cached_array[4], _cached_array[5], _cached_array[6])
+                8:
+                    callback.call(_cached_array[0], _cached_array[1], _cached_array[2], _cached_array[3], _cached_array[4], _cached_array[5], _cached_array[6], _cached_array[7])
+                9:
+                    callback.call(_cached_array[0], _cached_array[1], _cached_array[2], _cached_array[3], _cached_array[4], _cached_array[5], _cached_array[6], _cached_array[7], _cached_array[8])
+                10:
+                    callback.call(_cached_array[0], _cached_array[1], _cached_array[2], _cached_array[3], _cached_array[4], _cached_array[5], _cached_array[6], _cached_array[7], _cached_array[8], _cached_array[9])
+                11:
+                    callback.call(_cached_array[0], _cached_array[1], _cached_array[2], _cached_array[3], _cached_array[4], _cached_array[5], _cached_array[6], _cached_array[7], _cached_array[8], _cached_array[9], _cached_array[10])
+                _:
+                    # This shouldn't be reached due to the check above
+                    push_error("Invalid callback argument count: %d" % arg_count)
 
-                if not _cached_callback_to_remove.is_empty():
-                    for callback_ref in _cached_callback_to_remove:
-                        callbacks.erase(callback_ref)
-                    _cached_callback_to_remove.clear()
+        if not _cached_callback_to_remove.is_empty():
+            for callback_ref in _cached_callback_to_remove:
+                callbacks.erase(callback_ref)
+            _cached_callback_to_remove.clear()
