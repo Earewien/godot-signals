@@ -58,7 +58,6 @@ const _BANNED_SIGNALS: Dictionary = {
 
 static var _pattern_matcher: GBrokerPatternMatcher = GBrokerPatternMatcher.new()
 
-static var _registry: Dictionary = {}
 static var _subscriptions: Dictionary = {}
 static var _cached_array: Array[Variant] = []
 static var _cached_callback_to_remove: Array[Callable] = []
@@ -118,24 +117,9 @@ static func _connect_to_signals(object: Object, alias: String, signals: Array[Di
         var signal_unique_id: String = _compute_signal_unique_id(sig.name, sig.args)
         # Connect to signal, with a unique id for each signal and sending all known aliases for the object
         object.get(sig.name).connect(Callable(GBroker, "_on_signal_%s_received" % sig.args.size()).bind(object_weak_ref, aliases, sig.name))
-        # And registrer an entry for each alias
-        for object_alias in aliases:
-            var entry: Dictionary = _get_registry_entry_for(object_alias, signal_unique_id)
-            if not entry.has(object_weak_ref):
-                entry[object_weak_ref] = true
 
 static func _compute_signal_unique_id(signal_name: String, signal_args: Array[Dictionary]) -> String:
     return "%s:%s" % [signal_name, signal_args.hash()] # Very low probability of hash collision
-
-static func _get_registry_entry_for(alias: String, signal_unique_id: String) -> Dictionary:
-    if not _registry.has(alias):
-        _registry[alias] = {}
-
-    var alias_registry: Dictionary = _registry[alias]
-    if not alias_registry.has(signal_unique_id):
-        alias_registry[signal_unique_id] = {}
-
-    return alias_registry[signal_unique_id]
 
 static func _get_aliases(object: Object, alias: String) -> Array[String]:
     if alias != '':
