@@ -2,6 +2,7 @@
 * text=auto eol=lf
 
 # Only include the addons folder when downloading from the Asset Library.
-addons/gut                           export-ignore
-test                                 export-ignore
-.gutconfig.json                      export-ignore
+/**                        export-ignore
+/addons                    !export-ignore
+/addons/godot-signals      !export-ignore
+/addons/godot-signals/**   !export-ignore
