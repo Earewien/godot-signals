@@ -79,6 +79,7 @@ func _do_setup_connection() -> Callable:
         var filter_count = 0
         var map_count = 0
         var delay_count = 0
+        var debounce_count = 0
 
         for operation in _operations:
             if operation is GSignalsFilterOperation:
@@ -90,6 +91,9 @@ func _do_setup_connection() -> Callable:
             elif operation is GSignalsDelayOperation:
                 _generated_script_instance.set("_delay_%d" % delay_count, operation.delay_s)
                 delay_count += 1
+            elif operation is GSignalsDebounceOperation:
+                _generated_script_instance.set("_debounce_%d" % debounce_count, operation.wait_time_s)
+                debounce_count += 1
             else:
                 push_error("Unknown operation type: %s" % operation.type)
 
@@ -129,6 +133,7 @@ func _handle_signal(%s) -> void:
     var filter_count = 0
     var map_count = 0
     var delay_count = 0
+    var debounce_count = 0
     var current_args = ""
     var has_mapper = false
 
@@ -153,6 +158,10 @@ func _handle_signal(%s) -> void:
             private_vars += "var _delay_%d: float\nvar _awaiter_delay_%d: GAwaiter = GSignalsUtils.create_awaiter()\n" % [delay_count, delay_count]
             operation_calls += "    await _awaiter_delay_%d.wait_for(_delay_%d)\n" % [delay_count, delay_count]
             delay_count += 1
+        elif operation is GSignalsDebounceOperation:
+            private_vars += "var _debounce_%d: float\nvar _awaiter_debounce_%d: GAwaiter = GSignalsUtils.create_awaiter()\n" % [debounce_count, debounce_count]
+            operation_calls += "    if not await _awaiter_debounce_%d.wait_for(_debounce_%d):\n        return\n" % [debounce_count, debounce_count]
+            debounce_count += 1
         else:
             push_error("Unknown operation type: %s" % operation.type)
 

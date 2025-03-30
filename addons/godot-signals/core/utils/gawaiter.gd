@@ -10,6 +10,9 @@ extends RefCounted
 # Constants
 #------------------------------------------
 
+class GAwaiterWaitForResult extends RefCounted:
+    var wait_completed_successfully: bool
+
 #------------------------------------------
 # Signals
 #------------------------------------------
@@ -30,6 +33,8 @@ extends RefCounted
 var _scene_tree: SceneTree
 ## The Timer node used for waiting
 var _current_timer: Timer
+## Whether the wait completed successfully, i.e. the timer did not stop prematurely
+var _wait_completed_successfully: GAwaiterWaitForResult
 # Self is null when the object is beeing garbage collected, so to call _destroy_timer,
 # I keep a reference to self in _this
 var _this: GAwaiter
@@ -61,11 +66,15 @@ func _notification(what: int) -> void:
 ## duration, allowing for non-blocking delays in signal processing.
 ##
 ## [param time_s] The time to wait in seconds
-func wait_for(time_s: float) -> void:
-    if _current_timer == null:
-        _create_timer()
+func wait_for(time_s: float) -> bool:
+    if _current_timer == null or not _current_timer.is_node_ready():
+        await _create_timer()
     _stop_timer()
-    await _wait_for_timer(time_s)
+    return await _wait_for_timer(time_s)
+
+## Stops the timer if it's running
+func cancel() -> void:
+    _stop_timer()
 
 #------------------------------------------
 # Private functions
@@ -74,11 +83,18 @@ func wait_for(time_s: float) -> void:
 ## Creates the internal timer node
 func _create_timer() -> void:
     if _current_timer != null:
-        _destroy_timer()
+        if not _current_timer.is_node_ready():
+            await _current_timer.ready
+        _stop_timer()
+        return
 
     _current_timer = Timer.new()
     _current_timer.name = "%s-%s" % ["GAwaiter", get_instance_id()]
-    _scene_tree.root.add_child(_current_timer)
+    _scene_tree.root.call_deferred("add_child", _current_timer)
+    if _current_timer.is_node_ready():
+        return
+    else:
+        await _current_timer.ready
 
 ## Cleans up the timer node
 func _destroy_timer() -> void:
@@ -90,11 +106,21 @@ func _destroy_timer() -> void:
 ## Sets up and waits for the timer
 ##
 ## [param time_s] The time to wait in seconds
-func _wait_for_timer(time_s: float) -> void:
+func _wait_for_timer(time_s: float) -> bool:
+    var result = GAwaiterWaitForResult.new()
+    result.wait_completed_successfully = true
+    # Save the reference so a cancel operation can flag this result as not completed
+    _wait_completed_successfully = result
+
     _current_timer.start(time_s)
     await _current_timer.timeout
+    # Use the local reference, not the global one, since if a wait_for has been relaunched, the global
+    # reference will be different and will be set to true
+    return result.wait_completed_successfully
 
 ## Stops the timer if it's running
 func _stop_timer() -> void:
     if _current_timer != null:
         _current_timer.stop()
+        if _wait_completed_successfully != null:
+            _wait_completed_successfully.wait_completed_successfully = false

@@ -125,6 +125,19 @@ func delay(delay_s: float) -> GSignals:
     _operations.append(GSignalsDelayOperation.new(delay_s))
     return self
 
+## Debounces signal processing to prevent rapid-fire signal handling
+##
+## This operation waits until the signal stops firing for the specified duration
+## before allowing the signal to proceed. This is useful for handling events
+## that might fire in rapid succession when you only want to respond once after
+## the activity settles.
+##
+## [param wait_time_s] The time in seconds to wait for inactivity
+## [return] The GSignals instance for method chaining
+func debounce(wait_time_s: float) -> GSignals:
+    _operations.append(GSignalsDebounceOperation.new(wait_time_s))
+    return self
+
 #------------------------------------------
 # Private functions
 #------------------------------------------

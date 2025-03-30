@@ -219,6 +219,10 @@ func _handle_signal(args: Array[Variant]) -> void:
             current_args = [operation.apply(current_args)]
         elif operation is GSignalsDelayOperation:
             await operation.apply(current_args)
+        elif operation is GSignalsDebounceOperation:
+            var result = await operation.apply(current_args)
+            if result == null:
+                return
         else:
             push_error("Unknown operation type: %s" % operation.type)
 
