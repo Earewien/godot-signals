@@ -1,16 +1,15 @@
-## Base class for all signal operations in the GSignals system.
+## Signal operation that introduces a time delay in the signal processing chain
 ##
-## This abstract class defines the interface for signal operations that can be applied
-## to signal connections. Operations can transform or filter signal arguments before
-## they reach the final callback.
-##
-## @abstract
-class_name GSignalsOperation
-extends RefCounted
+## This operation pauses the signal processing pipeline for a specified
+## duration before allowing it to continue to the next operation. The signal
+## arguments are preserved through the delay.
+class_name GSignalsDelayOperation
+extends GSignalsOperation
 
 #------------------------------------------
 # Constants
 #------------------------------------------
+
 #------------------------------------------
 # Signals
 #------------------------------------------
@@ -27,21 +26,33 @@ extends RefCounted
 # Private variables
 #------------------------------------------
 
+## The delay duration in seconds
+var delay_s: float
+
 #------------------------------------------
 # Godot override functions
 #------------------------------------------
+
+## Creates a new delay operation
+##
+## [param d] The delay time in seconds
+func _init(d: float) -> void:
+    delay_s = d
 
 #------------------------------------------
 # Public functions
 #------------------------------------------
 
-## Applies the operation to the given arguments.
+## Applies the delay operation to the signal chain
 ##
-## @param args The array of arguments to process
-## @return The result of applying the operation to the arguments
-## @abstract
+## This creates an awaiter to pause processing for the specified duration.
+## The signal arguments are unchanged by this operation.
+##
+## [param args] The signal arguments
+## [return] A null value, always
 func apply(args: Array) -> Variant:
-    push_error("Not implemented")
+    var awaiter: GAwaiter = GSignalsUtils.create_awaiter()
+    await awaiter.wait_for(delay_s)
     return null
 
 #------------------------------------------

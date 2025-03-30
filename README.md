@@ -1,12 +1,19 @@
-[![Discord Banner](https://discordapp.com/api/guilds/1067685170397855754/widget.png?style=banner2)](https://discord.gg/SWg6vgcw3F)
-
-# Godot Signals
-
 <p align="center">
-  <img src="icon.png" width="128" height="128" alt="Godot Signals Icon">
+    <img src="docs/assets/banner_small.png" width="768" alt="banner" />
 </p>
 
+[![ci](https://github.com/Earewien/godot-signals/actions/workflows/unit_tests.yml/badge.svg)](https://github.com/Earewien/godot-signals/actions/workflows/unit_tests.yml)
+![Discord Shield](https://discord.com/api/guilds/1067685170397855754/widget.png?style=shield)
+
 A powerful signal system for Godot Engine that provides efficient signal handling with support for filtering, mapping, centralized event management, and high-performance signal processing.
+
+## 🛣️ Roadmap
+
+Here are some planned features and improvements:
+
+- 🔄 **Broker Binding**: Possibility to bind to the broker and receive a GSignal instance
+- ⚡ **Extended Operations**: Add more operations to GSignal such as debounce, merge, and more
+- 🔍 Suggest a feature by opening an issue on GitHub!
 
 ## ✨ Features
 
@@ -77,6 +84,24 @@ GSignals.from(enemy.attack)
 GSignals.from(position_changed)
     .map(func(pos: Vector2) -> float: return pos.distance_to(Vector2.ZERO))
     .bind(func(distance: float): set_volume(100 - distance))
+```
+
+#### ⏱️ Delaying Signals
+
+```gdscript
+# Delay signal processing by a specific time
+GSignals.from(damage_taken)
+    .delay(0.5)  # Delay by 0.5 seconds
+    .bind(func(amount): play_delayed_damage_effect(amount))
+```
+
+#### 🛑 Debouncing Signals
+
+```gdscript
+# Debounce rapid signal emissions
+GSignals.from(mouse_moved)
+    .debounce(0.1)  # Only process after 0.1s of inactivity
+    .bind(func(position): update_hover_effect(position))
 ```
 
 #### 🎛️ Connection Management
@@ -208,7 +233,3 @@ GBroker.broadcast_signals_of(player_node)
 ## 📄 License
 
 This project is licensed under the MIT License - see the LICENSE file for details.
-
-```
-
-```

@@ -1,16 +1,10 @@
-## Operation that filters signal arguments based on a predicate.
+# Autoload
+
+## Utility node that provides helper functions for the GSignals system
 ##
-## This operation takes a predicate Callable and only allows signal arguments
-## to pass through if the predicate returns true. If the predicate returns
-## false, the signal is filtered out and the callback is not called.
-##
-## Example:
-## [codeblock]
-## # Only process signals where the first argument is positive
-## var filter_op = GSignalsFilterOperation.new(func(x): return x > 0)
-## [/codeblock]
-class_name GSignalsFilterOperation
-extends GSignalsCallableOperation
+## This autoload node contains utility functions for creating objects
+## and managing resources needed by the signal processing system.
+extends Node
 
 #------------------------------------------
 # Constants
@@ -36,15 +30,20 @@ extends GSignalsCallableOperation
 # Godot override functions
 #------------------------------------------
 
-## Creates a new filter operation.
-##
-## @param predicate The Callable that determines whether to allow the signal through
-func _init(predicate: Callable) -> void:
-    super (predicate)
-
 #------------------------------------------
 # Public functions
 #------------------------------------------
+
+## Creates a new awaiter for delaying signal processing
+##
+## This helper method creates a new GAwaiter instance that can be
+## used to introduce delays in signal processing chains. The awaiter
+## is automatically provided with the current SceneTree.
+##
+## [return] A new GAwaiter instance configured with the current SceneTree
+func create_awaiter() -> GAwaiter:
+    var awaiter: GAwaiter = GAwaiter.new(get_tree())
+    return awaiter
 
 #------------------------------------------
 # Private functions

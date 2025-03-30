@@ -14,6 +14,10 @@ config/name="Godot Signals"
 config/features=PackedStringArray("4.4", "GL Compatibility")
 config/icon="uid://b67jx7uc7tkik"
 
+[autoload]
+
+GSignalsUtils="*res://addons/godot-signals/core/utils/gsignals_utils.gd"
+
 [editor_plugins]
 
 enabled=PackedStringArray("res://addons/godot-signals/plugin.cfg", "res://addons/gut/plugin.cfg")

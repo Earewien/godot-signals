@@ -1,12 +1,41 @@
 @tool
+class_name GodotSignals
 extends EditorPlugin
 
+#------------------------------------------
+# Constants
+#------------------------------------------
+
+#------------------------------------------
+# Signals
+#------------------------------------------
+
+#------------------------------------------
+# Exports
+#------------------------------------------
+
+#------------------------------------------
+# Public variables
+#------------------------------------------
+
+#------------------------------------------
+# Private variables
+#------------------------------------------
+
+#------------------------------------------
+# Godot override functions
+#------------------------------------------
 
 func _enter_tree() -> void:
-    # Initialization of the plugin goes here.
-    pass
-
+    add_autoload_singleton("GSignalsUtils", "res://addons/godot-signals/core/utils/gsignals_utils.gd")
 
 func _exit_tree() -> void:
-    # Clean-up of the plugin goes here.
-    pass
+    remove_autoload_singleton("GSignalsUtils")
+
+#------------------------------------------
+# Public functions
+#------------------------------------------
+
+#------------------------------------------
+# Private functions
+#------------------------------------------
