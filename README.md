@@ -7,6 +7,14 @@
 
 A powerful signal system for Godot Engine that provides efficient signal handling with support for filtering, mapping, centralized event management, and high-performance signal processing.
 
+## 🛣️ Roadmap
+
+Here are some planned features and improvements:
+
+- 🔄 **Broker Binding**: Possibility to bind to the broker and receive a GSignal instance
+- ⚡ **Extended Operations**: Add more operations to GSignal such as debounce, merge, and more
+- 🔍 Suggest a feature by opening an issue on GitHub!
+
 ## ✨ Features
 
 - 🔄 **Signal Processing**: Create signal processing chains with filter and map operations
