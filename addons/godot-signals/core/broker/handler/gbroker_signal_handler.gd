@@ -101,9 +101,9 @@ func _handle_signal_received(args: Array, object_weak_ref: WeakRef, aliases: Arr
     if not is_instance_valid(object):
         return
 
-    var matching_patterns_for_signal = _subscription_manager.get_matching_patterns_for_signal(aliases, signal_name)
+    var matching_patterns_for_signal: Array[String] = _subscription_manager.get_matching_patterns_for_signal(aliases, signal_name)
 
-    for pattern in matching_patterns_for_signal.keys():
+    for pattern in matching_patterns_for_signal:
         _cached_callback_to_remove.clear()
         var callbacks: Array[Callable] = _subscription_manager.get_callbacks_for_pattern(pattern)
 

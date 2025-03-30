@@ -47,9 +47,9 @@ func reset() -> void:
 ## Gets patterns that match the given aliases and signal name.
 ## @param aliases Array of identifiers to match against.
 ## @param signal_name The name of the signal.
-## @return A dictionary with matching patterns as keys.
-func get_matching_patterns_for_signal(aliases: Array[String], signal_name: String) -> Dictionary:
-    var matching_patterns_for_signal: Dictionary = {}
+## @return An array of matching patterns.
+func get_matching_patterns_for_signal(aliases: Array[String], signal_name: String) -> Array[String]:
+    var matching_patterns_for_signal: Array[String] = []
 
     for alias in aliases:
         var cache_key := "%s::%s" % [alias, signal_name]
@@ -57,14 +57,14 @@ func get_matching_patterns_for_signal(aliases: Array[String], signal_name: Strin
         if _pattern_match_cache.has(cache_key):
             var cached_patterns: Array[String] = _pattern_match_cache[cache_key]
             for p in cached_patterns:
-                matching_patterns_for_signal[p] = true
+                matching_patterns_for_signal.append(p)
         else:
             var newly_matched_patterns: Array[String] = []
             for pattern in _subscriptions.keys():
                 if _pattern_matcher.matches(alias, signal_name, pattern):
                     newly_matched_patterns.append(pattern)
-                    matching_patterns_for_signal[pattern] = true
             _pattern_match_cache[cache_key] = newly_matched_patterns
+            matching_patterns_for_signal.append_array(newly_matched_patterns)
 
     return matching_patterns_for_signal
 
