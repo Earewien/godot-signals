@@ -26,7 +26,6 @@ func test_broker_broadcast_only_script_signals() -> void:
     assert_true(_test_node.has_meta("test_signal"))
     assert_false(_test_node.has_meta("ready"))
 
-
 func test_broker_broadcast_only_except_native_signals() -> void:
     _test_node = Node2DChildTest.new()
     GBroker.broadcast_signals_of(_test_node, 'test', GBroker.GBrokerBroadcastFlags.EXCEPT_NATIVE_SIGNALS)
@@ -103,3 +102,45 @@ func test_broker_can_have_callback_with_9_args() -> void:
     wait_frames(1)
     _test_node.signal_9_args.emit(1, 2, 3, 4, 5, 6, 7, 8, 9)
     assert_eq(get_meta("signal_called"), 45)
+
+func test_broker_can_broadcast_direct_signals_from_same_object() -> void:
+    _test_node.name = "test"
+    set_meta("signal_called", [])
+    GBroker.broadcast_signals([_test_node.test_signal, _test_node.ready])
+    GBroker.subscribe("test:*", func(_object: Object, sig: String, _val):
+        get_meta("signal_called").append(sig))
+
+    add_child_autoqfree(_test_node)
+    _test_node.test_signal.emit(1)
+    wait_frames(1)
+
+    assert_eq(get_meta("signal_called"), ["ready", "test_signal"])
+
+func test_broker_can_broadcast_direct_signals_from_different_objects() -> void:
+    _test_node.name = "test"
+    var test_node2: Node2DTest = Node2DTest.new()
+    test_node2.name = "test"
+    set_meta("signal_called", [])
+    GBroker.broadcast_signals([_test_node.test_signal, _test_node.ready, test_node2.test_signal, test_node2.ready])
+    GBroker.subscribe("test:*", func(_object: Object, sig: String, _val):
+        get_meta("signal_called").append(sig))
+
+    add_child_autoqfree(_test_node)
+    add_child_autoqfree(test_node2)
+    _test_node.test_signal.emit(1)
+    test_node2.test_signal.emit(1)
+    wait_frames(1)
+
+    assert_eq(get_meta("signal_called"), ["ready", "ready", "test_signal", "test_signal"])
+
+func test_broker_only_emit_once_even_if_duplicated_aliases() -> void:
+    _test_node.name = "test"
+    _test_node.add_to_group("test")
+    set_meta("signal_called", [])
+
+    GBroker.broadcast_signals_of(_test_node, 'test')
+    GBroker.subscribe("test:*", func(_object: Object, sig: String, _val):
+        get_meta("signal_called").append(sig))
+    _test_node.test_signal.emit(1)
+    wait_frames(1)
+    assert_eq(get_meta("signal_called"), ["test_signal"])

@@ -13,6 +13,7 @@ func before_each() -> void:
 
 func test_get_signals_from_object_script() -> void:
     var object: NodeTest = NodeTest.new()
+    autoqfree(object)
 
     var signals: Array[Dictionary] = _detector.get_signals_from_object_script(object)
     assert_eq(signals.size(), 1)
@@ -21,9 +22,9 @@ func test_get_signals_from_object_script() -> void:
 
 func test_get_signals_from_object_except_native() -> void:
     var object: CharacterBody2D = CharacterBody2D.new()
+    autoqfree(object)
 
     var signals: Array[Dictionary] = _detector.get_signals_from_object_except_native(object)
-    print(signals)
     assert_true(signals.any(func(sig: Dictionary) -> bool: return sig.name == "input_event"))
     assert_true(signals.any(func(sig: Dictionary) -> bool: return sig.name == "mouse_shape_entered"))
     assert_true(signals.any(func(sig: Dictionary) -> bool: return sig.name == "mouse_shape_exited"))
@@ -32,6 +33,7 @@ func test_get_signals_from_object_except_native() -> void:
 
 func test_get_signals_from_object_except_native_with_user_defined_signals() -> void:
     var object: CharacterBody2DTest = CharacterBody2DTest.new()
+    autoqfree(object)
     object.add_user_signal("user_signal", [])
 
     var signals: Array[Dictionary] = _detector.get_signals_from_object_except_native(object)
@@ -39,6 +41,7 @@ func test_get_signals_from_object_except_native_with_user_defined_signals() -> v
 
 func test_get_signals_from_object_all() -> void:
     var object: CharacterBody2DTest = CharacterBody2DTest.new()
+    autoqfree(object)
 
     var signals: Array[Dictionary] = _detector.get_signals_from_object_all(object)
     assert_true(signals.any(func(sig: Dictionary) -> bool: return sig.name == "input_event"))

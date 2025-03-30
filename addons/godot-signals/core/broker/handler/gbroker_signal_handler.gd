@@ -1,6 +1,6 @@
 ## Handles the connection to signals and dispatches them to subscribers.
 ##
-## This class connects to objects' signals and routes them to registered callbacks based on 
+## This class connects to objects' signals and routes them to registered callbacks based on
 ## pattern matching. It supports signals with up to 9 arguments and intelligently passes
 ## those arguments to callbacks with variable parameter counts.
 class_name GBrokerSignalHandler
@@ -34,14 +34,43 @@ static func get_instance() -> GBrokerSignalHandler:
 ## Connects to all specified signals on the object.
 ## @param object The object to connect to.
 ## @param aliases Identifiers for the object.
-## @param signals Array of signal dictionaries with name and args.
-func connect_to_signals(object: Object, aliases: Array[String], signals: Array[Dictionary]) -> void:
+## @param signals Array of signals, either dictionaries with name and args or Signal objects.
+func connect_to_signals(object: Object, aliases: Array[String], signals: Array) -> void:
     var object_weak_ref: WeakRef = weakref(object)
-    
+
     for sig in signals:
-        var signal_unique_id: String = _compute_signal_unique_id(sig.name, sig.args)
+        var signal_name:String
+        var signal_args_count:int
+        var object_signal: Signal
+        var signal_unique_id: String
+
+        if sig is Dictionary:
+            signal_name = sig.name
+            signal_args_count = sig.args.size()
+            object_signal = object.get(signal_name)
+            signal_unique_id = _compute_signal_unique_id(signal_name, sig.args)
+        elif sig is Signal:
+            signal_name = sig.get_name()
+            var sig_descriptor:Dictionary = ClassDB.class_get_signal(object.get_class(), signal_name)
+            if sig_descriptor.is_empty() and object.get_script() != null:
+                var object_signals:Array[Dictionary] = object.get_signal_list()
+                for os in object_signals:
+                    if os.name == signal_name:
+                        sig_descriptor = os
+                        break
+                if sig_descriptor.is_empty():
+                    push_error("Unable to find signal %s data" % signal_name)
+                    continue
+
+            signal_args_count = sig_descriptor.args.size()
+            object_signal = sig
+            signal_unique_id = _compute_signal_unique_id(signal_name, sig_descriptor.args)
+        else:
+            push_error("Invalid signal: %s" % sig)
+            continue
+
         # Connect to signal, with a unique id for each signal and sending all known aliases for the object
-        object.get(sig.name).connect(Callable(self, "_on_signal_%s_received" % sig.args.size()).bind(object_weak_ref, aliases, sig.name))
+        object_signal.connect(Callable(self, "_on_signal_%s_received" % signal_args_count).bind(object_weak_ref, aliases, signal_name))
 
 ## Clears cached data.
 func reset() -> void:

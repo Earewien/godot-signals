@@ -49,8 +49,23 @@ static func broadcast_signals_of(object: Object, alias: Variant = '', flags: GBr
         _:
             push_error("Invalid broadcast flags: %s" % flags)
 
+## Broadcasts signals from an array of Signal dictionaries.
+## @param signals Array of Signal dictionaries with name and args.
+static func broadcast_signals(signals: Array[Signal]) -> void:
+    # Signals can comes from multiple objects, so we need to pack them by object first
+    var signals_by_object: Dictionary = {}
+    for sig in signals:
+        var object: Object = sig.get_object()
+        if not signals_by_object.has(object):
+            signals_by_object[object] = []
+        signals_by_object[object].append(sig)
+
+    for object in signals_by_object:
+        var aliases: Array[String] = _get_aliases(object, '')
+        _signal_handler.connect_to_signals(object, aliases, signals_by_object[object])
+
 ## Registers a callback to be called when signals matching the pattern are emitted.
-## @param pattern Format is "alias:signal" where * can be used as a wildcard. For example, 
+## @param pattern Format is "alias:signal" where * can be used as a wildcard. For example,
 ##               "player:*" matches all signals from objects with the "player" alias.
 ## @param callback The function to call when a matching signal is emitted.
 static func subscribe(pattern: String, callback: Callable) -> void:
@@ -83,15 +98,16 @@ static func _get_aliases(object: Object, alias: Variant) -> Array[String]:
         elif alias is Array[String]:
             return alias
 
-    var aliases: Array[String] = []
+    # Use Dictionary to avoid duplicated values easily
+    var aliases: Dictionary[String, bool] = {}
     if object is Node:
         if not object.get_groups().is_empty():
             for group in object.get_groups():
                 # Filter "internal groups": see get_groups documentation
                 if not str(group).begins_with("_"):
-                    aliases.append(group)
+                    aliases[group] = true
 
-    aliases.append(object.get_name())
-    aliases.append(object.get_name().to_lower().to_snake_case())
+    aliases[object.get_name()] = true
+    aliases[object.get_name().to_lower().to_snake_case()] = true
 
-    return aliases
+    return aliases.keys()
