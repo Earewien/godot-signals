@@ -1,10 +1,9 @@
-[![Discord Banner](https://discordapp.com/api/guilds/1067685170397855754/widget.png?style=banner2)](https://discord.gg/SWg6vgcw3F)
-
-# Godot Signals
-
 <p align="center">
-  <img src="icon.png" width="128" height="128" alt="Godot Signals Icon">
+    <img src="docs/assets/banner_small.png" width="768" alt="banner" />
 </p>
+
+[![ci](https://github.com/Earewien/godot-signals/actions/workflows/unit_tests.yml/badge.svg)](https://github.com/Earewien/godot-signals/actions/workflows/unit_tests.yml)
+![Discord Shield](https://discord.com/api/guilds/1067685170397855754/widget.png?style=shield)
 
 A powerful signal system for Godot Engine that provides efficient signal handling with support for filtering, mapping, centralized event management, and high-performance signal processing.
 
@@ -208,7 +207,3 @@ GBroker.broadcast_signals_of(player_node)
 ## 📄 License
 
 This project is licensed under the MIT License - see the LICENSE file for details.
-
-```
-
-```
