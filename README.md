@@ -78,6 +78,15 @@ GSignals.from(position_changed)
     .bind(func(distance: float): set_volume(100 - distance))
 ```
 
+#### ⏱️ Delaying Signals
+
+```gdscript
+# Delay signal processing by a specific time
+GSignals.from(damage_taken)
+    .delay(0.5)  # Delay by 0.5 seconds
+    .bind(func(amount): play_delayed_damage_effect(amount))
+```
+
 #### 🎛️ Connection Management
 
 ```gdscript

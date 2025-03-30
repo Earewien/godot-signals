@@ -41,7 +41,6 @@ extends GSignalsCallableOperation
 ## @param mapper The Callable that transforms the signal arguments
 func _init(mapper: Callable) -> void:
     super (mapper)
-    type = GSignalsMapOperationType.VALUE_TRANSFORMATION
 
 #------------------------------------------
 # Public functions

@@ -213,10 +213,12 @@ func _handle_signal(args: Array[Variant]) -> void:
 
     for operation in _operations:
         if operation is GSignalsFilterOperation:
-            if not operation.callable.callv(current_args):
+            if not operation.apply(current_args):
                 return
         elif operation is GSignalsMapOperation:
-            current_args = [operation.callable.callv(current_args)]
+            current_args = [operation.apply(current_args)]
+        elif operation is GSignalsDelayOperation:
+            await operation.apply(current_args)
         else:
             push_error("Unknown operation type: %s" % operation.type)
 

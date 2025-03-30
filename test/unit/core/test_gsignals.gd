@@ -2,6 +2,11 @@ extends GutTest
 
 var signal_counter: GSignalsSignalCounter
 
+var bind_flags = [
+    GSignals.GSignalsBindFlags.LOW_FREQUENCY_HINT,
+    GSignals.GSignalsBindFlags.HIGH_FREQUENCY_HINT,
+]
+
 func before_each() -> void:
     signal_counter = GSignalsSignalCounter.new()
 
@@ -32,34 +37,46 @@ func test_bind_with_high_frequency_hint_creates_high_frequency_connection() -> v
     var connection = gsignals.bind(signal_counter.callback_0_args)
     assert_true(connection is GSignalsHighFrequencyConnection)
 
-func test_map_operation_transforms_signal_args() -> void:
+func test_map_operation_transforms_signal_args(flags=use_parameters(bind_flags)) -> void:
     GSignals \
-        .from(signal_counter.signal_1_arg) \
+        .from(signal_counter.signal_1_arg, flags) \
         .map(func(a: int) -> int: return a * 2) \
         .bind(signal_counter.callback_1_arg)
-    
+
     signal_counter.signal_1_arg.emit(5)
     assert_eq(signal_counter.callback_1_called_count, 1)
     assert_eq(signal_counter.last_callback_1_args, [10])
 
-func test_filter_operation_filters_signal_args() -> void:
+
+func test_filter_operation_filters_signal_args(flags=use_parameters(bind_flags)) -> void:
     GSignals \
-        .from(signal_counter.signal_1_arg) \
+        .from(signal_counter.signal_1_arg, flags) \
         .filter(func(a: int) -> bool: return a > 0) \
         .bind(signal_counter.callback_1_arg)
-    
+
     signal_counter.signal_1_arg.emit(5)
     assert_eq(signal_counter.callback_1_called_count, 1)
     signal_counter.signal_1_arg.emit(-1)
     assert_eq(signal_counter.callback_1_called_count, 1)
 
-func test_chained_operations() -> void:
+func test_delay_operation_is_delaying_signal_emission(flags=use_parameters(bind_flags)) -> void:
     GSignals \
-        .from(signal_counter.signal_1_arg) \
+        .from(signal_counter.signal_1_arg, flags) \
+        .delay(1.0) \
+        .bind(signal_counter.callback_1_arg)
+
+    signal_counter.signal_1_arg.emit(5)
+    assert_eq(signal_counter.callback_1_called_count, 0)
+    await get_tree().create_timer(1.0).timeout
+    assert_eq(signal_counter.callback_1_called_count, 1)
+
+func test_chained_operations(flags=use_parameters(bind_flags)) -> void:
+    GSignals \
+        .from(signal_counter.signal_1_arg, flags) \
         .filter(func(a: int) -> bool: return a > 0) \
         .map(func(a: int) -> int: return a * 2) \
         .bind(signal_counter.callback_1_arg)
-    
+
     signal_counter.signal_1_arg.emit(5)
     assert_eq(signal_counter.callback_1_called_count, 1)
     assert_eq(signal_counter.last_callback_1_args, [10])
