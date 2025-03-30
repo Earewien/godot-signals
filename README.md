@@ -2,148 +2,213 @@
 
 # Godot Signals
 
-A powerful signal system for Godot Engine that provides efficient signal handling with support for filtering, mapping, and high-performance signal processing.
+<p align="center">
+  <img src="icon.png" width="128" height="128" alt="Godot Signals Icon">
+</p>
 
-## 📖 Overview
+A powerful signal system for Godot Engine that provides efficient signal handling with support for filtering, mapping, centralized event management, and high-performance signal processing.
 
-Godot Signals is an addon that enhances Godot's built-in signal system with powerful features for signal processing and event management. It provides a clean, high-level API for working with signals while handling all the complexity of efficient signal processing under the hood.
+## ✨ Features
 
-The addon is built on two main components:
-
-- **Signal Processing**: Efficient signal handling with support for transform operations such as filtering and mapping
-- **Event Bus** (Coming Soon): A global event system for centralized event management
+- 🔄 **Signal Processing**: Create signal processing chains with filter and map operations
+- 📡 **Signal Broker**: Connect signals across your game without direct object references
+- ⚡ **Smart Connection Types**: Automatically optimizes for high or low frequency signals
+- 🔍 **Pattern Matching**: Subscribe to signals using wildcard patterns
+- 🏷️ **Alias System**: Identify objects by name, groups, or custom aliases
+- 🚀 **Optimized Performance**: Reduced overhead and minimal allocations for efficient processing
 
 ## 🚀 Quick Start
 
-Here's a quick guide to get started with Godot Signals:
+### 🔄 Signal Processing
 
-### Basic Signal Connection
+Create powerful signal processing chains with just a few lines of code:
 
 ```gdscript
-# Connect to a signal
-GSignals.from(signal)
-    .bind(func(val): print("Only 11 and more!"))
+# Filter, transform, and react to signals
+GSignals.from(damage_signal)
+    .filter(func(amount: int) -> bool: return amount >= 10)
+    .map(func(amount: int) -> int: return amount * critical_multiplier)
+    .bind(func(final_damage: int): apply_damage(final_damage))
 ```
 
-### Filtering Signals
+### 📡 Signal Broker
+
+Connect components without direct references:
 
 ```gdscript
-# Only process signals where the first argument is at least 10
-GSignals.from(signal)
-    .filter(func(val: int) -> bool: return val >= 10)
-    .bind(func(val: int): print("10 and more!"))
+# Broadcasting side: Register player node's signals with the broker
+GBroker.broadcast_signals_of(player_node, "player")
+
+# Listening side: Subscribe to player damage events anywhere in your code
+GBroker.subscribe("player:damage_taken", func(amount): update_health_ui(amount))
 ```
 
-### Transforming Signals
+## 📥 Installation
+
+1. Download or clone this repository
+2. Copy the `addons/godot-signals` folder into your project's `addons` directory
+3. Enable the plugin in Project Settings > Plugins
+
+## 📖 Tutorial
+
+### 🔄 Signal Processing
+
+#### 🔌 Basic Signal Connection
 
 ```gdscript
-# Transform a position signal into a distance from origin
-GSignals.from(signal)
-    .map(func(pos: Vector2) -> float: return pos.distance_to(position))
-    .bind(func(distance: float): print("Distance to target: %s" % distance))
+# Connect to a signal with a simple callback
+GSignals.from(player.health_changed)
+    .bind(func(new_health): update_health_bar(new_health))
 ```
 
-### Chaining Operations
+#### 🔍 Filtering Signals
 
 ```gdscript
-# Filter and then transform signal arguments
-GSignals.from(signal)
-    .filter(func(x: int) -> bool: return x > 0)
-    .map(func(x: int) -> int: return x * 2)
-    .bind(func(x: int): print(x))
+# Only process signals where the value meets certain criteria
+GSignals.from(enemy.attack)
+    .filter(func(damage: int) -> bool: return damage > 5)
+    .bind(func(damage): play_heavy_hit_sound())
 ```
 
-## 🎯 Features
-
-### 🔑 Signal Processing
-
-- **Filter Operations**: Filter signal arguments based on predicates
-- **Map Operations**: Transform signal arguments into new values
-- **Combined Operations**: Chain multiple operations together
-- **Optimization**: Choose the best connection type based on signal frequency (frequent versus unfrequent emissions)
-
-### 🔑 Event Bus (Coming Soon)
-
-### 🔑 Performance Optimizations
-
-- **Smart Connection Types**: Automatically choose between high-frequency and low-frequency connections
-- **Minimal Allocations**: Efficient memory usage
-- **Optimized Callbacks**: Reduced overhead for signal processing
-
-## 📚 Usage Guide
-
-### 🔧 Basic Setup
-
-1. Add the addon to your project
-2. Enable the addon in Project Settings
-3. The `GSignals` class will be available in your code
-
-### 🎯 Creating Operations
+#### 🔄 Transforming Signals
 
 ```gdscript
-# Create a GSignals instance
-var sig_1: GSignals = GSignals.from(my_signal)
-# Is equivalent to
-var sig_2: GSignals = GSignals.from(self, "my_signal")
+# Transform signal data before processing
+GSignals.from(position_changed)
+    .map(func(pos: Vector2) -> float: return pos.distance_to(Vector2.ZERO))
+    .bind(func(distance: float): set_volume(100 - distance))
 ```
 
-It is also possible to explicitly set the signal emission frequency for optimal performance:
+#### 🎛️ Connection Management
 
 ```gdscript
-# Tells the signal is emitting frequently and should be optimized for performance
-var sig: GSignals = GSignals.from(my_signal, GSignals.GSignalsBindFlags.HIGH_FREQUENCY_HINT)
-```
+# Store and manage connections
+var connection = GSignals.from(timer.timeout).bind(func(): spawn_enemy())
 
-### 🔍 Managing Connections
-
-```gdscript
-# Connect to a signal
-var connection = GSignals.from(my_signal).bind(callback)
-# Also possible to connect to an existing GSignals instance
-var sig: GSignals = ...
-var connection = sig.bind(callback)
-```
-
-When binding to a `GSignals` instance, the connection is automatically started, hence the underlying signal is connected.
-
-```gdscript
-# Check if connection is active
-if connection.is_active():
-    # Do something
-```
-
-```gdscript
-# Disconnect from a signal
+# Temporarily disable connection
 connection.stop()
+
+# Re-enable connection
+connection.start()
 ```
 
-Connections can be re-established by invoking the `start` method.
+### 📡 Signal Broker
 
-### 🔍 Operations
-
-#### Filter
+#### 📣 Broadcasting Signals
 
 ```gdscript
-# Filter signal parameters; if the filter returns false, the signal is not handled
-GSignals.from(on_damage)
-    .filter(func(val: int) -> bool: return val > 0)
-    .bind(...)
+# Register an object's signals with the broker
+GBroker.broadcast_signals_of(
+    player,                   # The object whose signals will be broadcasted
+    "player",                 # Alias for identifying the object (optional)
+    GBroker.GBrokerBroadcastFlags.SCRIPT_ONLY  # Which signals to broadcast
+)
 ```
 
-#### Map
+#### 🏷️ Setting Multiple Aliases
 
 ```gdscript
-# Transform parameters into another value
-GSignals.from(on_damage)
-    .map(func(val: int) -> int: return val * critical_damage_ratio)
-    .bind(...)
+# Register with multiple aliases for more flexible subscription patterns
+GBroker.broadcast_signals_of(
+    boss_entity,
+    ["boss", "enemy", "entity"]
+)
 ```
 
-### 🎮 Performance Considerations
+#### 👂 Subscribing to Signals
 
-- Chain operations carefully as each operation adds overhead
-- Use the Event Bus (coming soon) for global event management
+```gdscript
+# Subscribe to specific signals
+GBroker.subscribe("player:health_changed", func(new_health): update_health_ui(new_health))
 
-## 📝 License
+# Use wildcard patterns to subscribe to multiple signals
+GBroker.subscribe("player:*", func(emitter, signal_name, args): print("Player signal: ", signal_name))
+GBroker.subscribe("*:damage_taken", func(damage): update_global_damage_counter(damage))
+```
+
+#### 🧹 Cleanup
+
+```gdscript
+# Clear all subscriptions and signal handlers when switching scenes
+func _exit_tree():
+    GBroker.reset()
+```
+
+### 🔬 Advanced Broker Usage
+
+#### 📊 Callback Arguments Handling
+
+The broker intelligently handles callback arguments depending on how many parameters your callback function accepts:
+
+```gdscript
+# Just receive the signal arguments (most common)
+GBroker.subscribe("player:health_changed", func(health_amount): update_ui(health_amount))
+
+# Receive emitter object, signal name, and arguments
+GBroker.subscribe("player:*", func(emitter, signal_name, args):
+    print("Signal %s from %s with args %s" % [signal_name, emitter.name, args])
+)
+
+# Mixed patterns with different argument counts
+GBroker.subscribe("enemy:hit", func(damage, hit_position):
+    spawn_particle(hit_position)
+    apply_damage(damage)
+)
+
+# Missing arguments are filled with null
+GBroker.subscribe("*:*", func(emitter, signal_name, arg1, arg2, arg3):
+    # arg2 and arg3 will be null if the signal emits less than 3 arguments
+    print("%s emitted %s with up to 3 args: %s, %s, %s" % [
+        emitter.name, signal_name, arg1, arg2, arg3
+    ])
+)
+```
+
+##### 📝 Notes on argument handling:
+
+- If the callback has fewer parameters than the signal provides, extra signal arguments are ignored
+- If the callback has more parameters than the signal provides, extra callback parameters receive null
+- The first callback parameter can receive the emitter object if an extra parameter is available
+- The second parameter can receive the signal name if additional parameters are available
+- Subsequent parameters receive the signal arguments
+
+## 🔧 Advanced Features
+
+### ⚡ Custom Signal Frequency Optimization
+
+```gdscript
+# Optimize for high-frequency signals (e.g., position updates)
+GSignals.from(position_changed, GSignals.GSignalsBindFlags.HIGH_FREQUENCY_HINT)
+```
+
+### 🤖 Automatic Alias Detection
+
+When no alias is provided, the broker automatically uses:
+
+- 👥 The node's groups (except internal groups)
+- 📛 The node's name
+- 🔤 Snake case version of the node's name
+
+```gdscript
+# For a node named "PlayerCharacter" in group "characters"
+GBroker.broadcast_signals_of(player_node)
+# This will automatically register with aliases:
+# - "characters" (from group)
+# - "PlayerCharacter" (from name)
+# - "player_character" (snake case conversion)
+```
+
+## ⚙️ Performance Considerations
+
+- 🔗 Chain operations carefully as each adds processing overhead
+- 🏎️ Use the `HIGH_FREQUENCY_HINT` flag for signals that emit multiple times per frame
+- 🧠 The pattern matching system uses caching to optimize frequent signal matches
+- 🔌 Direct signal connections with GSignals are more efficient than broker subscriptions when you have direct references
+
+## 📄 License
 
 This project is licensed under the MIT License - see the LICENSE file for details.
+
+```
+
+```
