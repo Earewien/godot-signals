@@ -70,6 +70,56 @@ func test_delay_operation_is_delaying_signal_emission(flags=use_parameters(bind_
     await get_tree().create_timer(1.0).timeout
     assert_eq(signal_counter.callback_1_called_count, 1)
 
+func test_debounce_operation_let_pass_values_if_delay_is_okay(flags=use_parameters(bind_flags)) -> void:
+    GSignals \
+        .from(signal_counter.signal_1_arg, flags) \
+        .debounce(0.1) \
+        .bind(signal_counter.callback_1_arg)
+
+    signal_counter.signal_1_arg.emit(1)
+    await get_tree().create_timer(0.15).timeout
+    assert_eq(signal_counter.callback_1_called_count, 1)
+    assert_eq(signal_counter.last_callback_1_args, [1])
+
+    signal_counter.signal_1_arg.emit(2)
+    await get_tree().create_timer(0.15).timeout
+    assert_eq(signal_counter.callback_1_called_count, 2)
+    assert_eq(signal_counter.last_callback_1_args, [2])
+
+func test_debounce_operation_is_debouncing_signal_emission(flags=use_parameters(bind_flags)) -> void:
+    GSignals \
+        .from(signal_counter.signal_1_arg, flags) \
+        .debounce(0.5) \
+        .bind(signal_counter.callback_1_arg)
+
+    signal_counter.signal_1_arg.emit(1)
+    assert_eq(signal_counter.callback_1_called_count, 0)
+    await get_tree().create_timer(0.25).timeout
+    signal_counter.signal_1_arg.emit(2)
+    assert_eq(signal_counter.callback_1_called_count, 0)
+    await get_tree().create_timer(0.5).timeout
+    assert_eq(signal_counter.callback_1_called_count, 1)
+    assert_eq(signal_counter.last_callback_1_args, [2])
+
+func test_debounce_real_example(flags=use_parameters(bind_flags)) -> void:
+    var input: TextEdit = TextEdit.new()
+    add_child_autofree(input)
+    GSignals \
+        .from(input.text_set, flags) \
+        .map(func(): return input.text) \
+        .debounce(0.5) \
+        .bind(signal_counter.callback_1_arg)
+
+    input.text = "a"
+    await wait_seconds(0.2)
+    input.text = "ab"
+    await wait_seconds(0.2)
+    input.text = "abc"
+    await wait_seconds(0.6)
+
+    assert_eq(signal_counter.callback_1_called_count, 1)
+    assert_eq(signal_counter.last_callback_1_args, ["abc"])
+
 func test_chained_operations(flags=use_parameters(bind_flags)) -> void:
     GSignals \
         .from(signal_counter.signal_1_arg, flags) \

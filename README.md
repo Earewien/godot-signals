@@ -87,6 +87,15 @@ GSignals.from(damage_taken)
     .bind(func(amount): play_delayed_damage_effect(amount))
 ```
 
+#### 🛑 Debouncing Signals
+
+```gdscript
+# Debounce rapid signal emissions
+GSignals.from(mouse_moved)
+    .debounce(0.1)  # Only process after 0.1s of inactivity
+    .bind(func(position): update_hover_effect(position))
+```
+
 #### 🎛️ Connection Management
 
 ```gdscript

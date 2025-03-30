@@ -71,6 +71,7 @@ func callback_1_arg(arg: Variant) -> void:
     callback_called_count += 1
     callback_1_called_count += 1
     last_callback_1_args = [arg]
+
 func callback_2_args(arg1: Variant, arg2: Variant) -> void:
     callback_called_count += 1
     callback_2_called_count += 1
