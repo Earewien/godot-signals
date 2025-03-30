@@ -137,3 +137,12 @@ func test_connection_is_stored_in_signal_emitter() -> void:
     assert_true(signal_counter.has_meta("_gsignals_connections"))
     var connections = signal_counter.get_meta("_gsignals_connections")
     assert_true(connections.has(connection))
+
+func test_can_subscribe_and_received_signal_args_without_operations(flags=use_parameters(bind_flags)) -> void:
+    GSignals \
+        .from(signal_counter.signal_1_arg, flags) \
+        .bind(signal_counter.callback_1_arg)
+
+    signal_counter.signal_1_arg.emit(9)
+    assert_eq(signal_counter.callback_1_called_count, 1)
+    assert_eq(signal_counter.last_callback_1_args, [9])
