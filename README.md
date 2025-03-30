@@ -1,6 +1,10 @@
 [![Discord Banner](https://discordapp.com/api/guilds/1067685170397855754/widget.png?style=banner2)](https://discord.gg/SWg6vgcw3F)
 
-# 🎮 Godot Signals
+# Godot Signals
+
+<p align="center">
+  <img src="icon.png" width="128" height="128" alt="Godot Signals Icon">
+</p>
 
 A powerful signal system for Godot Engine that provides efficient signal handling with support for filtering, mapping, centralized event management, and high-performance signal processing.
 
